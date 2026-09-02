@@ -1,12 +1,12 @@
 # TFG Anvil Calculator
 
-[![Deploy to GitHub Pages](https://github.com/LambdaTenEleven/tfg-anvil-calculator/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/LambdaTenEleven/tfg-anvil-calculator/actions/workflows/deploy.yml)
+[![Deploy to GitHub Pages](https://github.com/Johncakes/tfg-anvil-calculator/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/Johncakes/tfg-anvil-calculator/actions/workflows/deploy.yml)
 
 A small React app helper for TerraFirmaGreg anvil calculator UI.
 It's a little bit vibecoded since I'm not proficient with React, but I tried to clean up it a little bit.
 The calculator is inspired by https://github.com/AdrianMiller99/tfg-anvil-calculator but fixes a few bugs that allows it to be used with TerraFirmaGreg and probably other modpacks.
 
-Link to the app: https://lambdateneleven.github.io/tfg-anvil-calculator
+Link to the app: https://johncakes.github.io/tfg-anvil-calculator
 
 ## How to use
 
@@ -35,7 +35,7 @@ The result is split into two parts:
 ## Running locally
 
 ```sh
-git clone https://github.com/LambdaTenEleven/tfg-anvil-calculator.git
+git clone https://github.com/Johncakes/tfg-anvil-calculator.git
 cd tfg-anvil-calculator
 npm install
 npm run dev
@@ -47,7 +47,10 @@ The dev server runs at `http://127.0.0.1:5174/`.
 
 Code in this project is licensed under the European Union Public Licence (EUPL) 1.2. See [LICENSE](./LICENSE) for details.
 
-This project is based on/adapted from [tfg-anvil-calculator](https://github.com/AdrianMiller99/tfg-anvil-calculator) by AdrianMiller99, also licensed under EUPL 1.2.
+This project is a fork of [tfg-anvil-calculator](https://github.com/LambdaTenEleven/tfg-anvil-calculator)
+by LambdaTenEleven, which is itself based on/adapted from
+[tfg-anvil-calculator](https://github.com/AdrianMiller99/tfg-anvil-calculator) by AdrianMiller99.
+Both are licensed under EUPL 1.2.
 
 Item textures in `public/textures/items` come from three places:
 

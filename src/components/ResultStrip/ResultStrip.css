@@ -16,6 +16,16 @@
   gap: 8px;
 }
 
+/* Separates one action from the next, so a lone icon is not read as sharing
+   the (xN) count of the run beside it. */
+.action-run:not(:last-child)::after {
+  content: "";
+  align-self: flex-start;
+  width: 1px;
+  height: 56px;
+  background: var(--color-row-border);
+}
+
 .action-count {
   min-height: 56px;
   display: inline-flex;

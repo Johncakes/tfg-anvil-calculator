@@ -236,7 +236,7 @@ export default function App() {
       <footer className="app-footer">
         <a
           className="github-link"
-          href="https://github.com/LambdaTenEleven/tfg-anvil-calculator"
+          href="https://github.com/Johncakes/tfg-anvil-calculator"
           target="_blank"
           rel="noreferrer"
           aria-label="View source on GitHub"
