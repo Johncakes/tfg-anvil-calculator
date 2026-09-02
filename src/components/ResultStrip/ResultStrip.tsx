@@ -41,16 +41,13 @@ export default function ResultStrip({ title, actions, emptyText, intro }: Result
         {actions.length > 0 ? (
           actionRuns.map((run) => (
             <span className="action-run" key={`${run.action}-${run.startIndex}`}>
-              {Array.from({ length: run.count }, (_, offset) => (
-                <ActionIcon
-                  key={`${run.action}-${run.startIndex + offset}`}
-                  action={run.action}
-                  button={false}
-                  className="result-icon"
-                  description={ACTIONS[run.action].label}
-                  showDescription
-                />
-              ))}
+              <ActionIcon
+                action={run.action}
+                button={false}
+                className="result-icon"
+                description={ACTIONS[run.action].label}
+                showDescription
+              />
               {run.count > 1 ? <span className="action-count">(x{run.count})</span> : null}
             </span>
           ))

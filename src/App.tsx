@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import InstructionRow from './components/InstructionRow';
+import ItemPicker from './components/ItemPicker';
 import ResultStrip from './components/ResultStrip';
 import ThemeToggle from './components/ThemeToggle';
 import {
@@ -9,6 +10,8 @@ import {
   type SelectedInstruction,
 } from './domain/actions';
 import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
+import { findRecipe } from './domain/recipes';
+import { recallTarget, rememberTarget } from './domain/targetMemory';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
@@ -28,6 +31,7 @@ export default function App() {
     emptyInstruction(),
     emptyInstruction(),
   ]);
+  const [recipeId, setRecipeId] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [zeroAlignedMode, setZeroAlignedMode] = useState(false);
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -38,12 +42,36 @@ export default function App() {
     [instructions],
   );
 
+  const recipe = useMemo(() => findRecipe(recipeId), [recipeId]);
+
   function updateInstruction(index: number, patch: Partial<Instruction>) {
+    // Hand-editing a row means the rows no longer describe the picked item.
+    setRecipeId('');
     setInstructions((current) =>
       current.map((instruction, instructionIndex) =>
         instructionIndex === index ? { ...instruction, ...patch } : instruction,
       ),
     );
+  }
+
+  function selectRecipe(nextRecipeId: string) {
+    setRecipeId(nextRecipeId);
+    setResult(null);
+    setError('');
+
+    const nextRecipe = findRecipe(nextRecipeId);
+    if (!nextRecipe) {
+      setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
+      return;
+    }
+
+    setInstructions([
+      ...nextRecipe.instructions,
+      ...Array.from({ length: 3 - nextRecipe.instructions.length }, emptyInstruction),
+    ]);
+
+    const knownTarget = recallTarget(nextRecipeId);
+    setTargetValue(knownTarget === null ? '' : String(knownTarget));
   }
 
   function calculate() {
@@ -60,6 +88,10 @@ export default function App() {
       allowBelowZeroSetup: zeroAlignedMode,
     });
 
+    if (recipeId && !zeroAlignedMode) {
+      rememberTarget(recipeId, parsedTarget);
+    }
+
     setError('');
     setResult({
       setupActions,
@@ -68,6 +100,7 @@ export default function App() {
   }
 
   function reset() {
+    setRecipeId('');
     setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
     setTargetValue('');
     setResult(null);
@@ -104,6 +137,8 @@ export default function App() {
               </button>
             </div>
           </div>
+
+          <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
 
           <div className="instruction-list-header" aria-hidden="true">
             <span>Action</span>

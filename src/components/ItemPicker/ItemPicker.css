@@ -1,0 +1,33 @@
+.item-picker {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.item-picker-controls {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.item-preview-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-icon-border);
+  background: var(--color-icon-bg);
+}
+
+.item-preview-icon img {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+}
+
+.item-picker-note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
