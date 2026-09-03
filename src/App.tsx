@@ -11,7 +11,6 @@ import {
 } from './domain/actions';
 import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
 import { findRecipe } from './domain/recipes';
-import { recallTarget, rememberTarget } from './domain/targetMemory';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
@@ -70,8 +69,9 @@ export default function App() {
       ...Array.from({ length: 3 - nextRecipe.instructions.length }, emptyInstruction),
     ]);
 
-    const knownTarget = recallTarget(nextRecipeId);
-    setTargetValue(knownTarget === null ? '' : String(knownTarget));
+    // The target depends on the metal as well as the item, so a value typed for
+    // one item never carries over to the next.
+    setTargetValue('');
   }
 
   function calculate() {
@@ -87,10 +87,6 @@ export default function App() {
     const setupActions = calculateSetupActions(parsedTarget, finalInstructions, {
       allowBelowZeroSetup: zeroAlignedMode,
     });
-
-    if (recipeId && !zeroAlignedMode) {
-      rememberTarget(recipeId, parsedTarget);
-    }
 
     setError('');
     setResult({

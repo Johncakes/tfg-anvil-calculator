@@ -26,9 +26,8 @@ a few changes to make it a faster and more simple process.
 2. Enter the target value shown in the anvil GUI.
 3. Click Calculate.
 
-Target values are generated from your world seed and the recipe id, which means a given item always
-has the same target within one world. The app remembers the target you enter for each item, so you
-only have to type it once per item.
+Target values are generated from your world seed and the recipe id, which includes the metal, so
+the same item has a different target in every metal.
 
 If the target value is hard to read, enable Zero-aligned mode in Settings. Align the red and green
 pointers in the anvil UI, then calculate with the app's assumed target value of `0`.
