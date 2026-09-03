@@ -2,40 +2,27 @@
 
 [![Deploy to GitHub Pages](https://github.com/Johncakes/tfg-anvil-calculator/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/Johncakes/tfg-anvil-calculator/actions/workflows/deploy.yml)
 
-A solver for the TerraFirmaCraft / TerraFirmaGreg anvil minigame. Forging in the anvil asks you
-to move a pointer onto an exact target value using hits, draws, punches, bends, upsets and
-shrinks, while making sure the last few actions match the three smithing instructions the recipe
-demands. The app works out a sequence of actions that lands on the target *and* ends with the
-required instructions, so you can stop guessing at the anvil and just follow the icons.
-
-Link to the app: https://johncakes.github.io/tfg-anvil-calculator
+A Calculator for the TerraFirmaCraft anvil system
 
 ## What's different from the original
 
 This is a fork of [AdrianMiller99's calculator](https://github.com/AdrianMiller99/tfg-anvil-calculator)
 (by way of [LambdaTenEleven's fork](https://github.com/LambdaTenEleven/tfg-anvil-calculator)) with
-a few fixes that make it usable with TerraFirmaGreg and probably other modpacks. On top of that:
+a few changes to make it a faster and more simple process.
 
-- **Anvil conditions are automated.** Instead of transcribing the three smithing instructions from
-  the anvil GUI every time, pick what you are forging from the item list — 54 recipes
-  across tools & weapons, armor, metalworking, and blocks & misc, each with its item icon — and the
-  instructions and their priorities are filled in for you.
-- **The steps are actually readable.** Results come back as the real anvil action icons with
-  labels, repeated actions collapse into `(x3)` style runs, and the plan is split into a *Setup*
-  part (order does not matter) and a *Finally* part (must be done in the order shown).
-- **Quality of life.** Dark mode, a zero-aligned mode for when the target number is hard to read,
-  and remembered target values per item.
+- **Anvil conditions are automated.** Instead of selecting the three smithing instructions from
+  the anvil GUI every time, pick what you are forging from the item list and instructions and their priorities are filled in for you.
+- **Improved readability for steps.** Results come back as a anvil action icons with
+  labels, repeated actions collapse into `(x3)` style runs, and the actions a separated with a divider.
 
 ## How to use
 
-1. Tell the app what the anvil is asking for. There are two ways to do this, and they set the same
-   thing:
-   - **Pick the item you are forging.** The item picker fills in all three smithing instructions
+1. - **Pick the item you are forging.** The item picker fills in all three smithing instructions
      and their priorities automatically. The rules for an item depend only on what the item is,
      never on which metal it is made from, so one entry covers every metal.
    - **Or set the instructions by hand.** Choose up to three instructions to match the ones shown
      in the in-game anvil GUI, and give each one its priority: Last, Second Last, Third Last, Not
-     Last, or Any. Use this for anything the item list does not cover.
+     Last, or Any. **Use this for anything the item list does not cover.**
 2. Enter the target value shown in the anvil GUI.
 3. Click Calculate.
 
