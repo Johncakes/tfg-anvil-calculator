@@ -5,6 +5,7 @@
 }
 
 .item-picker-controls {
+  position: relative;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   gap: 12px;
@@ -14,10 +15,18 @@
 .item-preview-icon {
   width: 52px;
   height: 52px;
+  padding: 0;
   display: grid;
   place-items: center;
   border: 1px solid var(--color-icon-border);
   background: var(--color-icon-bg);
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.item-preview-icon:hover,
+.item-preview-icon[aria-expanded='true'] {
+  border-color: var(--color-icon-border-hover);
 }
 
 .item-preview-icon img {
@@ -26,8 +35,129 @@
   image-rendering: pixelated;
 }
 
+/* Placeholder so an empty square still reads as something you can open. */
+.item-preview-empty {
+  width: 22px;
+  height: 22px;
+  border: 2px dashed var(--color-icon-border-hover);
+  opacity: 0.7;
+}
+
+.item-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.item-search-input {
+  width: 100%;
+  padding: 10px 34px 10px 12px;
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-field-bg);
+  color: var(--color-text);
+}
+
+.item-search-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.item-clear {
+  position: absolute;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.item-clear:hover {
+  background: var(--color-secondary-bg);
+  color: var(--color-text);
+}
+
+.item-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 10;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-field-bg);
+  box-shadow: 0 10px 24px var(--color-panel-shadow);
+}
+
+.item-group + .item-group {
+  margin-top: 4px;
+  border-top: 1px solid var(--color-row-border);
+}
+
+.item-group-label {
+  padding: 8px 10px 4px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.item-option {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.item-option.active {
+  background: var(--color-secondary-bg);
+}
+
+.item-option.selected .item-option-label {
+  font-weight: 800;
+}
+
+.item-option-icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.item-option-label {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.item-menu-empty {
+  margin: 0;
+  padding: 12px 10px;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
 .item-picker-note {
   margin: 0;
   color: var(--color-muted);
   font-size: 0.8rem;
+}
+
+@media (max-width: 560px) {
+  .item-menu {
+    max-height: 260px;
+  }
 }
