@@ -22,7 +22,9 @@
     transform 160ms ease;
 }
 
-.action-icon:hover {
+/* Only the pickable buttons react to hover; result icons are static and keep
+   their action colour. */
+button.action-icon:hover {
   transform: translateY(-1px);
   border-color: var(--color-icon-border-hover);
 }

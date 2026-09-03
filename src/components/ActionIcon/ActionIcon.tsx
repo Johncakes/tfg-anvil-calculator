@@ -25,11 +25,18 @@ export default function ActionIcon({
   const icon = <img src={textureUrl(action)} alt="" />;
 
   const cell = button ? (
-    <button type="button" className={cellClassName} onClick={onClick} title={label} aria-label={label}>
+    <button
+      type="button"
+      className={cellClassName}
+      data-action={action}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+    >
       {icon}
     </button>
   ) : (
-    <span className={cellClassName} title={label} aria-label={label} role="img">
+    <span className={cellClassName} data-action={action} title={label} aria-label={label} role="img">
       {icon}
     </span>
   );

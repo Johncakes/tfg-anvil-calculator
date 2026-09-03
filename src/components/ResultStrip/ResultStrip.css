@@ -50,3 +50,63 @@
   background: var(--color-icon-bg);
   image-rendering: pixelated;
 }
+
+/* Per-action colours, matching the in-game anvil helper icons. Each action gets
+   the flat fill plus the lighter/darker bevel edges. These are the only colours
+   in the app, and they are deliberately scoped to the result icons: the picker
+   and the instruction rows stay neutral so the plan is what draws the eye. */
+.result-icon[data-action="lightHit"] {
+  --action-base: #67d6d6;
+  --action-highlight: #a2eaea;
+  --action-shadow: #2d8181;
+}
+
+.result-icon[data-action="mediumHit"] {
+  --action-base: #4c8bba;
+  --action-highlight: #94c0df;
+  --action-shadow: #04456b;
+}
+
+.result-icon[data-action="hardHit"] {
+  --action-base: #2f409e;
+  --action-highlight: #7f8bca;
+  --action-shadow: #131a5d;
+}
+
+.result-icon[data-action="draw"] {
+  --action-base: #7000f7;
+  --action-highlight: #a85ef7;
+  --action-shadow: #3e0088;
+}
+
+.result-icon[data-action="punch"] {
+  --action-base: #85d265;
+  --action-highlight: #b8e8a3;
+  --action-shadow: #456137;
+}
+
+.result-icon[data-action="bend"] {
+  --action-base: #e1cf71;
+  --action-highlight: #f1e5a8;
+  --action-shadow: #897b2a;
+}
+
+.result-icon[data-action="upset"] {
+  --action-base: #c48356;
+  --action-highlight: #deb395;
+  --action-shadow: #ac744d;
+}
+
+.result-icon[data-action="shrink"] {
+  --action-base: #a93b3b;
+  --action-highlight: #c98383;
+  --action-shadow: #671313;
+}
+
+.result-icon[data-action] {
+  border-color: var(--action-shadow);
+  background: var(--action-base);
+  box-shadow:
+    inset 3px 3px 0 var(--action-highlight),
+    inset -3px -3px 0 var(--action-shadow);
+}
