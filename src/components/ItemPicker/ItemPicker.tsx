@@ -229,8 +229,6 @@ export default function ItemPicker({ value, recipe, onChange }: ItemPickerProps)
           </div>
         ) : null}
       </div>
-
-      {recipe ? <p className="item-picker-note">{recipe.note ?? 'Available in every metal.'}</p> : null}
     </div>
   );
 }

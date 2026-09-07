@@ -1,6 +1,4 @@
 .item-picker {
-  display: grid;
-  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -148,12 +146,6 @@
   padding: 12px 10px;
   color: var(--color-muted);
   font-size: 0.86rem;
-}
-
-.item-picker-note {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 0.8rem;
 }
 
 @media (max-width: 560px) {
