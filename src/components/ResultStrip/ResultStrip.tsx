@@ -35,7 +35,7 @@ export default function ResultStrip({ title, actions, emptyText, intro }: Result
 
   return (
     <section className="result-strip">
-      <h3>{title}</h3>
+      <h4>{title}</h4>
       {intro}
       <div className="action-row">
         {actions.length > 0 ? (

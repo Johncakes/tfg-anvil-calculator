@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
+import HistoryPanel from './components/HistoryPanel';
 import InstructionRow from './components/InstructionRow';
 import ItemPicker from './components/ItemPicker';
+import ModeTabs, { type SmithingMode } from './components/ModeTabs';
 import ResultStrip from './components/ResultStrip';
 import ThemeToggle from './components/ThemeToggle';
 import {
@@ -10,7 +12,9 @@ import {
   type SelectedInstruction,
 } from './domain/actions';
 import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
-import { findRecipe } from './domain/recipes';
+import type { HistoryItem } from './domain/history';
+import { findRecipe, type AnvilRecipe } from './domain/recipes';
+import { useHistory } from './hooks/useHistory';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
 
@@ -23,8 +27,31 @@ function isSelectedInstruction(instruction: Instruction): instruction is Selecte
   return instruction.action !== '' && instruction.priority !== '';
 }
 
+/** A recipe fills the three rows; anything it leaves over stays empty. */
+function instructionRows(recipe: AnvilRecipe): Instruction[] {
+  return [
+    ...recipe.instructions,
+    ...Array.from({ length: 3 - recipe.instructions.length }, emptyInstruction),
+  ];
+}
+
+function runCalculation(
+  selected: SelectedInstruction[],
+  target: number,
+  allowBelowZeroSetup: boolean,
+): CalculationResult {
+  const finalInstructions = normalizeInstructions(selected, target);
+
+  return {
+    setupActions: calculateSetupActions(target, finalInstructions, { allowBelowZeroSetup }),
+    finalActions: sortInstructions(finalInstructions).map((instruction) => instruction.action),
+  };
+}
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const { history, remember, clear: clearHistory } = useHistory();
+  const [mode, setMode] = useState<SmithingMode>('auto');
   const [instructions, setInstructions] = useState<Instruction[]>([
     emptyInstruction(),
     emptyInstruction(),
@@ -35,6 +62,8 @@ export default function App() {
   const [zeroAlignedMode, setZeroAlignedMode] = useState(false);
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [error, setError] = useState('');
+  const panelPrefix = useId();
+  const panelIds = { auto: `${panelPrefix}-auto`, manual: `${panelPrefix}-manual` };
 
   const validInstructions = useMemo(
     () => instructions.filter(isSelectedInstruction),
@@ -64,13 +93,11 @@ export default function App() {
       return;
     }
 
-    setInstructions([
-      ...nextRecipe.instructions,
-      ...Array.from({ length: 3 - nextRecipe.instructions.length }, emptyInstruction),
-    ]);
+    setInstructions(instructionRows(nextRecipe));
 
     // The target depends on the metal as well as the item, so a value typed for
-    // one item never carries over to the next.
+    // one item never carries over to the next. Past targets come back through the
+    // history, where each entry carries the target it was calculated with.
     setTargetValue('');
   }
 
@@ -83,16 +110,35 @@ export default function App() {
       return;
     }
 
-    const finalInstructions = normalizeInstructions(validInstructions, parsedTarget);
-    const setupActions = calculateSetupActions(parsedTarget, finalInstructions, {
-      allowBelowZeroSetup: zeroAlignedMode,
-    });
+    // Calculating is the point you actually forge the item, so that is what the
+    // history records; hand-set instructions have no item to record.
+    if (recipeId) {
+      remember({ recipeId, target: parsedTarget, zeroAligned: zeroAlignedMode });
+    }
 
     setError('');
-    setResult({
-      setupActions,
-      finalActions: sortInstructions(finalInstructions).map((instruction) => instruction.action),
-    });
+    setResult(runCalculation(validInstructions, parsedTarget, zeroAlignedMode));
+  }
+
+  function restore(item: HistoryItem) {
+    setMode('auto');
+    setRecipeId(item.recipeId);
+    setInstructions(instructionRows(item.recipe));
+    setTargetValue(item.zeroAligned ? '' : String(item.target));
+    setZeroAlignedMode(item.zeroAligned);
+    setError('');
+    // Results are derived, so old entries are recalculated rather than stored and
+    // replayed; an entry can never show a result the calculator would not give now.
+    setResult(runCalculation(item.recipe.instructions, item.target, item.zeroAligned));
+  }
+
+  function changeMode(nextMode: SmithingMode) {
+    // The two modes can describe different instructions, so a result from one is
+    // not an answer for the other. Rows are kept, so a picked item is a starting
+    // point you can then tweak by hand.
+    setMode(nextMode);
+    setResult(null);
+    setError('');
   }
 
   function reset() {
@@ -127,30 +173,89 @@ export default function App() {
           <div className="section-heading">
             <h2>Smithing Instructions</h2>
             <div className="section-heading-actions">
-              <span>{validInstructions.length}/3 set</span>
+              {mode === 'manual' ? <span>{validInstructions.length}/3 set</span> : null}
               <button type="button" className="quiet-button" onClick={reset}>
                 Clear all
               </button>
             </div>
           </div>
 
-          <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+          <ModeTabs mode={mode} panelIds={panelIds} onChange={changeMode} />
 
-          <div className="instruction-list-header" aria-hidden="true">
-            <span>Action</span>
-            <span>Priority</span>
-          </div>
+          {mode === 'auto' ? (
+            <div
+              className="mode-body"
+              id={panelIds.auto}
+              role="tabpanel"
+              aria-labelledby={`${panelIds.auto}-tab`}
+            >
+              <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+            </div>
+          ) : (
+            <div
+              className="mode-body"
+              id={panelIds.manual}
+              role="tabpanel"
+              aria-labelledby={`${panelIds.manual}-tab`}
+            >
+              <div className="instruction-list-header" aria-hidden="true">
+                <span>Action</span>
+                <span>Priority</span>
+              </div>
 
-          <div className="instruction-list">
-            {instructions.map((instruction, index) => (
-              <InstructionRow
-                key={index}
-                instruction={instruction}
-                index={index}
-                onActionChange={(action) => updateInstruction(index, { action })}
-                onPriorityChange={(priority) => updateInstruction(index, { priority })}
-              />
-            ))}
+              <div className="instruction-list">
+                {instructions.map((instruction, index) => (
+                  <InstructionRow
+                    key={index}
+                    instruction={instruction}
+                    index={index}
+                    onActionChange={(action) => updateInstruction(index, { action })}
+                    onPriorityChange={(priority) => updateInstruction(index, { priority })}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="instructions-result">
+            <div className="section-heading">
+              <h3>Result</h3>
+              {result ? (
+                <span>{result.setupActions.length + result.finalActions.length} actions</span>
+              ) : null}
+            </div>
+
+            {result ? (
+              <>
+                <ResultStrip
+                  title="1. Setup"
+                  actions={result.setupActions}
+                  emptyText="No setup actions needed."
+                  intro={
+                    zeroAlignedMode ? (
+                      <div className="alignment-step">
+                        <p>Align the red and green pointers in the anvil UI.</p>
+                        <img
+                          src={`${import.meta.env.BASE_URL}textures/interface.png`}
+                          alt="Anvil UI with red and green pointers aligned"
+                        />
+                      </div>
+                    ) : undefined
+                  }
+                />
+                <ResultStrip
+                  title="2. Finally"
+                  actions={result.finalActions}
+                  emptyText="No final instructions selected."
+                />
+              </>
+            ) : (
+              <p className="empty-state">
+                {mode === 'auto'
+                  ? 'Pick an item, enter the target, then calculate.'
+                  : 'Choose instructions, enter the target, then calculate.'}
+              </p>
+            )}
           </div>
         </section>
 
@@ -194,40 +299,9 @@ export default function App() {
         </div>
       </div>
 
-      <section className="panel results-panel">
-        <div className="section-heading">
-          <h2>Result</h2>
-          {result ? <span>{result.setupActions.length + result.finalActions.length} actions</span> : null}
-        </div>
-
-        {result ? (
-          <>
-            <ResultStrip
-              title="1. Setup"
-              actions={result.setupActions}
-              emptyText="No setup actions needed."
-              intro={
-                zeroAlignedMode ? (
-                  <div className="alignment-step">
-                    <p>Align the red and green pointers in the anvil UI.</p>
-                    <img
-                      src={`${import.meta.env.BASE_URL}textures/interface.png`}
-                      alt="Anvil UI with red and green pointers aligned"
-                    />
-                  </div>
-                ) : undefined
-              }
-            />
-            <ResultStrip
-              title="2. Finally"
-              actions={result.finalActions}
-              emptyText="No final instructions selected."
-            />
-          </>
-        ) : (
-          <p className="empty-state">Choose instructions, enter the target, then calculate.</p>
-        )}
-      </section>
+      {history.length > 0 ? (
+        <HistoryPanel items={history} onSelect={restore} onClear={clearHistory} />
+      ) : null}
 
       <footer className="app-footer">
         <a

@@ -1,0 +1,66 @@
+.history-panel {
+  margin-top: 16px;
+  padding: 20px;
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-entry {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--color-row-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--color-row-bg);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.history-entry:hover {
+  border-color: var(--color-icon-border-hover);
+  background: var(--color-secondary-bg);
+}
+
+.history-entry:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.history-entry-icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.history-entry-label {
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* The target is the half of an entry that is easy to lose, so it stays legible. */
+.history-entry-target {
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .history-panel {
+    padding: 14px;
+  }
+}

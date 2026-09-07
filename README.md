@@ -17,14 +17,21 @@ a few changes to make it a faster and more simple process.
 
 ## How to use
 
-1. - **Pick the item you are forging.** The item picker fills in all three smithing instructions
-     and their priorities automatically. The rules for an item depend only on what the item is,
-     never on which metal it is made from, so one entry covers every metal.
-   - **Or set the instructions by hand.** Choose up to three instructions to match the ones shown
-     in the in-game anvil GUI, and give each one its priority: Last, Second Last, Third Last, Not
-     Last, or Any. **Use this for anything the item list does not cover.**
+1. Pick how the instructions get set with the **Auto** / **Manual** tabs:
+   - **Auto** — pick the item you are forging and all three smithing instructions and their
+     priorities are set for you behind the scenes. The rules for an item depend only on what the
+     item is, never on which metal it is made from, so one entry covers every metal.
+   - **Manual** — choose up to three instructions to match the ones shown in the in-game anvil
+     GUI, and give each one its priority: Last, Second Last, Third Last, Not Last, or Any.
+     **Use this for anything the item list does not cover.**
 2. Enter the target value shown in the anvil GUI.
-3. Click Calculate.
+3. Click Calculate. The result appears in the same box, below the instructions.
+
+Every calculation you run on a picked item is kept in your browser and listed in the **History**
+panel below the result, newest first, up to eight entries. Each entry records the item *and* the
+target it was calculated with, so clicking one brings back the instructions, the target and the
+result together. Forging the same item in a second metal is a separate entry, because the target
+is different. **Clear all** in that panel empties it.
 
 Target values are generated from your world seed and the recipe id, which includes the metal, so
 the same item has a different target in every metal.
