@@ -25,6 +25,11 @@
   --color-secondary-bg-hover: #cfcfcf;
   --color-secondary-text: #333333;
   --color-error: #9b2f25;
+  --color-go: #2e7d46;
+  --color-go-hover: #25663a;
+  --color-go-text: #f7fdf9;
+  --color-danger: #9b2f25;
+  --color-danger-hover: #7d241c;
   --color-icon-bg: #666666;
   --color-icon-border: #4d4d4d;
   --color-icon-border-hover: #b0b0b0;
@@ -52,6 +57,11 @@
   --color-secondary-bg-hover: #474747;
   --color-secondary-text: #e0e0e0;
   --color-error: #ef8b7e;
+  --color-go: #6ec283;
+  --color-go-hover: #84d097;
+  --color-go-text: #10210f;
+  --color-danger: #ef8b7e;
+  --color-danger-hover: #f6a99e;
   --color-icon-bg: #4a4a4a;
   --color-icon-border: #808080;
   --color-icon-border-hover: #c6c6c6;
@@ -171,15 +181,17 @@ input:disabled {
   cursor: pointer;
 }
 
+/* Calculate and Clear all are the two committing actions, so they carry the only
+   colour outside the result icons: go and undo. */
 .primary-button {
   width: 100%;
   margin-top: 16px;
-  color: var(--color-primary-text);
-  background: var(--color-primary);
+  color: var(--color-go-text);
+  background: var(--color-go);
 }
 
 .primary-button:hover {
-  background: var(--color-primary-hover);
+  background: var(--color-go-hover);
 }
 
 .secondary-button {
@@ -195,7 +207,7 @@ input:disabled {
   min-height: 28px;
   border-radius: 4px;
   padding: 0 4px;
-  color: var(--color-secondary-text);
+  color: var(--color-danger);
   background: transparent;
   font-size: 0.85rem;
   font-weight: 800;
@@ -203,7 +215,7 @@ input:disabled {
 }
 
 .quiet-button:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-danger-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
