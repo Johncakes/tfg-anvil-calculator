@@ -1,218 +1,103 @@
 import {
-  ACTION_VALUES,
-  type PickableActionId,
-  type ResolvedActionId,
-  type ResolvedInstruction,
-  type SelectedInstruction,
+  ACTION_VALUES, PICKABLE_ACTIONS, PRIORITIES,
+  type ResolvedActionId, type SelectedInstruction,
 } from './actions';
 
-interface CalculateSetupActionsOptions {
-  allowBelowZeroSetup?: boolean;
+export interface Bounds { min: number; max: number }
+export const ANVIL_BOUNDS: Bounds = { min: 0, max: 150 };
+// TFC 1.20.x generates targets 40–113. These offsets stay inside 0–150
+// for every such target, even when the player cannot read its numeric value.
+export const ZERO_ALIGNED_BOUNDS: Bounds = { min: -40, max: 37 };
+
+export interface CalculationResult {
+  setupActions: ResolvedActionId[];
+  finalActions: ResolvedActionId[];
 }
 
-const MAX_ACTION_MAGNITUDE = Math.max(...Object.values(ACTION_VALUES).map(Math.abs));
+export type SolveResult =
+  | { ok: true; plan: CalculationResult }
+  | { ok: false; error: string };
 
-function selectBestHit(
-  preTargetValue: number,
-  remainingHits: ResolvedActionId[],
-  targetValue: number,
-): ResolvedActionId {
-  let bestHitAction = remainingHits[0];
-  let minActions = Infinity;
-
-  remainingHits.forEach((hit) => {
-    const hitValue = ACTION_VALUES[hit];
-    const actionsNeeded = Math.ceil(preTargetValue / hitValue);
-
-    if (
-      actionsNeeded < minActions &&
-      (preTargetValue % hitValue === 0 || preTargetValue + hitValue <= targetValue)
-    ) {
-      minActions = actionsNeeded;
-      bestHitAction = hit;
-    }
-  });
-
-  return bestHitAction;
+interface SolveRequest {
+  target: number;
+  rules: readonly SelectedInstruction[];
+  /** Inclusive positions relative to the starting position, which is always 0. */
+  bounds?: Bounds;
 }
 
-export function normalizeInstructions(
-  rawInstructions: SelectedInstruction[],
-  targetValue: number,
-): ResolvedInstruction[] {
-  let instructionSum = 0;
+const actions = Object.keys(ACTION_VALUES) as ResolvedActionId[];
+const positions = {
+  last: [0], 'second-last': [1], 'third-last': [2],
+  'not-last': [1, 2], any: [0, 1, 2],
+} as const;
 
-  return rawInstructions.map((instruction) => {
-    let action: PickableActionId | ResolvedActionId = instruction.action;
-
-    if (action === 'hit') {
-      action = selectBestHit(
-        targetValue - instructionSum,
-        ['lightHit', 'mediumHit', 'hardHit'],
-        targetValue,
-      );
-    }
-
-    const resolvedAction = action as ResolvedActionId;
-    instructionSum += ACTION_VALUES[resolvedAction];
-    return { ...instruction, action: resolvedAction };
-  });
+function matches(final: ResolvedActionId[], rules: readonly SelectedInstruction[]): boolean {
+  return rules.every((rule) => positions[rule.priority].some((offset) => {
+    const action = final[final.length - 1 - offset];
+    return rule.action === 'hit'
+      ? action === 'lightHit' || action === 'mediumHit' || action === 'hardHit'
+      : action === rule.action;
+  }));
 }
 
-export function calculateSetupActions(
-  targetValue: number,
-  instructions: ResolvedInstruction[],
-  options: CalculateSetupActionsOptions = {},
-): ResolvedActionId[] {
-  const instructionSum = instructions.reduce(
-    (total, instruction) => total + ACTION_VALUES[instruction.action],
-    0,
-  );
-  const preTargetValue = targetValue - instructionSum;
-
-  if (options.allowBelowZeroSetup) {
-    return calculateSignedSetupActions(preTargetValue);
+/** Find a shortest complete plan, not separately optimized setup/final parts.
+ * All rule-relevant suffixes have at most three actions (8³ possibilities).
+ * A BFS supplies a shortest bounded prefix for every possible suffix start.
+ * Together these cover every valid plan, including overlapping rules and hits.
+ */
+export function solve({ target, rules, bounds = ANVIL_BOUNDS }: SolveRequest): SolveResult {
+  const { min, max } = bounds;
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min > 0 || max < 0 || min < -150 || max > 150) {
+    return { ok: false, error: 'Bounds must be whole numbers within -150 to 150 and include the starting position 0.' };
+  }
+  if (!Number.isInteger(target) || target < min || target > max) {
+    return { ok: false, error: `Enter a whole-number target between ${min} and ${max}.` };
+  }
+  if (rules.length > 3 || rules.some((rule) =>
+    !PICKABLE_ACTIONS.includes(rule.action) || !PRIORITIES.some(({ value }) => value !== '' && value === rule.priority))) {
+    return { ok: false, error: 'Choose up to three complete action and priority rules.' };
   }
 
-  if (!Number.isFinite(preTargetValue) || preTargetValue <= 0) {
-    return [];
-  }
-
-  const dp = Array<number>(preTargetValue + 1).fill(Infinity);
-  dp[0] = 0;
-
-  for (let i = 0; i <= preTargetValue; i += 1) {
-    if (dp[i] === Infinity) {
-      continue;
-    }
-
-    Object.entries(ACTION_VALUES).forEach(([action, value]) => {
-      const nextValue = i + value;
-
-      if (nextValue >= 0 && nextValue <= preTargetValue) {
-        dp[nextValue] = Math.min(dp[nextValue], dp[i] + 1);
-      }
-    });
-  }
-
-  const setupActions: ResolvedActionId[] = [];
-  let currentValue = preTargetValue;
-
-  while (currentValue > 0 && dp[currentValue] !== Infinity) {
-    const nextAction = Object.keys(ACTION_VALUES).find((action) => {
-      const resolvedAction = action as ResolvedActionId;
-      const prevValue = currentValue - ACTION_VALUES[resolvedAction];
-      return prevValue >= 0 && dp[prevValue] === dp[currentValue] - 1;
-    }) as ResolvedActionId | undefined;
-
-    if (!nextAction) {
-      break;
-    }
-
-    setupActions.push(nextAction);
-    currentValue -= ACTION_VALUES[nextAction];
-  }
-
-  return setupActions.reverse();
-}
-
-function calculateSignedSetupActions(targetValue: number): ResolvedActionId[] {
-  if (!Number.isFinite(targetValue) || targetValue === 0) {
-    return [];
-  }
-
-  const actions = getSignedSearchActions(targetValue);
-  const searchMargin = MAX_ACTION_MAGNITUDE * 2;
-  const minValue = Math.min(0, targetValue) - searchMargin;
-  const maxValue = Math.max(0, targetValue) + searchMargin;
-  const visited = new Map<number, { previous: number; action: ResolvedActionId } | null>();
+  const paths = new Map<number, ResolvedActionId[]>([[0, []]]);
   const queue = [0];
-
-  visited.set(0, null);
-
-  for (let index = 0; index < queue.length; index += 1) {
-    const currentValue = queue[index];
-
+  for (let index = 0; index < queue.length; index++) {
+    const position = queue[index];
     for (const action of actions) {
-      const nextValue = currentValue + ACTION_VALUES[action];
-
-      if (nextValue < minValue || nextValue > maxValue || visited.has(nextValue)) {
-        continue;
-      }
-
-      visited.set(nextValue, { previous: currentValue, action });
-
-      if (nextValue === targetValue) {
-        return reconstructSignedSetupActions(targetValue, visited);
-      }
-
-      queue.push(nextValue);
+      const next = position + ACTION_VALUES[action];
+      if (next < min || next > max || paths.has(next)) continue;
+      paths.set(next, [...paths.get(position)!, action]);
+      queue.push(next);
     }
   }
 
-  return [];
-}
+  let best: CalculationResult | undefined;
+  let bestLength = Infinity;
+  let consistent = false;
 
-function getSignedSearchActions(targetValue: number): ResolvedActionId[] {
-  const actionEntries = Object.entries(ACTION_VALUES) as [ResolvedActionId, number][];
-  const targetDirection = Math.sign(targetValue);
-
-  return actionEntries
-    .slice()
-    .sort(([, firstValue], [, secondValue]) => {
-      const firstMatchesDirection = Math.sign(firstValue) === targetDirection;
-      const secondMatchesDirection = Math.sign(secondValue) === targetDirection;
-
-      if (firstMatchesDirection === secondMatchesDirection) {
-        return 0;
+  function visit(final: ResolvedActionId[], delta: number) {
+    if (matches(final, rules)) {
+      consistent = true;
+      let position = target - delta;
+      const setup = paths.get(position);
+      if (setup && setup.length + final.length < bestLength) {
+        const withinBounds = final.every((action) => {
+          position += ACTION_VALUES[action];
+          return position >= min && position <= max;
+        });
+        if (withinBounds) {
+          best = { setupActions: setup, finalActions: final };
+          bestLength = setup.length + final.length;
+        }
       }
-
-      return firstMatchesDirection ? -1 : 1;
-    })
-    .map(([action]) => action);
-}
-
-function reconstructSignedSetupActions(
-  targetValue: number,
-  visited: Map<number, { previous: number; action: ResolvedActionId } | null>,
-): ResolvedActionId[] {
-  const setupActions: ResolvedActionId[] = [];
-  let currentValue = targetValue;
-
-  while (currentValue !== 0) {
-    const step = visited.get(currentValue);
-
-    if (!step) {
-      return [];
     }
-
-    setupActions.push(step.action);
-    currentValue = step.previous;
+    if (final.length < 3) {
+      for (const action of actions) visit([...final, action], delta + ACTION_VALUES[action]);
+    }
   }
 
-  return setupActions.reverse();
-}
-
-export function sortInstructions(instructions: ResolvedInstruction[]): ResolvedInstruction[] {
-  const last = instructions.filter((instruction) => instruction.priority === 'last');
-  const secondLast = instructions.filter((instruction) => instruction.priority === 'second-last');
-  const thirdLast = instructions.filter((instruction) => instruction.priority === 'third-last');
-  const notLast = instructions.filter((instruction) => instruction.priority === 'not-last');
-  const anyPriority = instructions.filter((instruction) => instruction.priority === 'any');
-
-  const sorted = [...thirdLast, ...secondLast, ...notLast, ...last];
-
-  if (anyPriority.length === 0) {
-    return sorted;
-  }
-
-  let insertionPoint = sorted.length;
-  if (last.length > 0 && secondLast.length > 0) {
-    insertionPoint = sorted.length - last.length - secondLast.length;
-  } else if (last.length > 0) {
-    insertionPoint = sorted.length - last.length;
-  }
-
-  sorted.splice(insertionPoint, 0, ...anyPriority);
-  return sorted;
+  visit([], 0);
+  if (best) return { ok: true, plan: best };
+  return { ok: false, error: consistent
+    ? 'No plan can reach this target within the allowed bounds.'
+    : 'These rules conflict: no final sequence can satisfy all of them.' };
 }

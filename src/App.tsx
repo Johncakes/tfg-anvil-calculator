@@ -8,10 +8,9 @@ import ThemeToggle from './components/ThemeToggle';
 import {
   emptyInstruction,
   type Instruction,
-  type ResolvedActionId,
   type SelectedInstruction,
 } from './domain/actions';
-import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
+import { solve, ZERO_ALIGNED_BOUNDS, type CalculationResult } from './domain/calculator';
 import type { HistoryItem } from './domain/history';
 import { normalizeMaterial } from './domain/materials';
 import MaterialPicker from './components/MaterialPicker';
@@ -19,11 +18,6 @@ import { findRecipe, type AnvilRecipe } from './domain/recipes';
 import { useHistory } from './hooks/useHistory';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
-
-interface CalculationResult {
-  setupActions: ResolvedActionId[];
-  finalActions: ResolvedActionId[];
-}
 
 function isSelectedInstruction(instruction: Instruction): instruction is SelectedInstruction {
   return instruction.action !== '' && instruction.priority !== '';
@@ -35,19 +29,6 @@ function instructionRows(recipe: AnvilRecipe): Instruction[] {
     ...recipe.instructions,
     ...Array.from({ length: 3 - recipe.instructions.length }, emptyInstruction),
   ];
-}
-
-function runCalculation(
-  selected: SelectedInstruction[],
-  target: number,
-  allowBelowZeroSetup: boolean,
-): CalculationResult {
-  const finalInstructions = normalizeInstructions(selected, target);
-
-  return {
-    setupActions: calculateSetupActions(target, finalInstructions, { allowBelowZeroSetup }),
-    finalActions: sortInstructions(finalInstructions).map((instruction) => instruction.action),
-  };
 }
 
 export default function App() {
@@ -76,6 +57,8 @@ export default function App() {
   const recipe = useMemo(() => findRecipe(recipeId), [recipeId]);
 
   function updateInstruction(index: number, patch: Partial<Instruction>) {
+    setResult(null);
+    setError('');
     // Hand-editing a row means the rows no longer describe the picked item.
     setRecipeId('');
     setMaterial('');
@@ -107,11 +90,25 @@ export default function App() {
   }
 
   function calculate() {
-    const parsedTarget = zeroAlignedMode ? 0 : Number.parseInt(targetValue, 10);
+    const parsedTarget = zeroAlignedMode ? 0 : targetValue.trim() === '' ? NaN : Number(targetValue);
+    setResult(null);
 
-    if (!Number.isInteger(parsedTarget) || parsedTarget < 0) {
-      setError('Enter a target value of 0 or higher.');
-      setResult(null);
+    if (mode === 'auto' && !recipe) {
+      setError('Pick an item to forge.');
+      return;
+    }
+    if (instructions.some(({ action, priority }) => Boolean(action) !== Boolean(priority))) {
+      setError('Choose both an action and a priority for each instruction, or clear the row.');
+      return;
+    }
+    if (validInstructions.length === 0) {
+      setError('Choose at least one smithing instruction.');
+      return;
+    }
+    const outcome = solve({ target: parsedTarget, rules: validInstructions,
+      bounds: zeroAlignedMode ? ZERO_ALIGNED_BOUNDS : undefined });
+    if (!outcome.ok) {
+      setError(outcome.error);
       return;
     }
 
@@ -124,7 +121,7 @@ export default function App() {
     }
 
     setError('');
-    setResult(runCalculation(validInstructions, parsedTarget, zeroAlignedMode));
+    setResult(outcome.plan);
   }
 
   function restore(item: HistoryItem) {
@@ -134,10 +131,12 @@ export default function App() {
     setInstructions(instructionRows(item.recipe));
     setTargetValue(item.zeroAligned ? '' : String(item.target));
     setZeroAlignedMode(item.zeroAligned);
-    setError('');
     // Results are derived, so old entries are recalculated rather than stored and
     // replayed; an entry can never show a result the calculator would not give now.
-    setResult(runCalculation(item.recipe.instructions, item.target, item.zeroAligned));
+    const outcome = solve({ target: item.target, rules: item.recipe.instructions,
+      bounds: item.zeroAligned ? ZERO_ALIGNED_BOUNDS : undefined });
+    setResult(outcome.ok ? outcome.plan : null);
+    setError(outcome.ok ? '' : outcome.error);
   }
 
   function changeMode(nextMode: SmithingMode) {
@@ -287,14 +286,21 @@ export default function App() {
             <label className="target-field">
               <input
                 type="number"
+                aria-label="Target value"
                 min="0"
+                max="150"
+                step="1"
                 value={zeroAlignedMode ? '0' : targetValue}
                 disabled={zeroAlignedMode}
-                onChange={(event) => setTargetValue(event.target.value)}
+                onChange={(event) => {
+                  setTargetValue(event.target.value);
+                  setResult(null);
+                  setError('');
+                }}
                 placeholder="Example: 72"
               />
             </label>
-            {error ? <p className="error-message">{error}</p> : null}
+            {error ? <p className="error-message" role="alert">{error}</p> : null}
             <button type="button" className="primary-button" onClick={calculate}>
               Calculate
             </button>

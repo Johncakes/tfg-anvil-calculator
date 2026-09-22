@@ -42,11 +42,18 @@ the same item has a different target in every metal.
 
 If the target value is hard to read, enable Zero-aligned mode in Settings. Align the red and green
 pointers in the anvil UI, then calculate with the app's assumed target value of `0`.
+Zero-aligned mode uses relative offsets safe for standard TFC targets (40–113).
+Custom modpacks with targets outside that range should use the numeric target mode.
 
 The result is split into two parts:
 
-- Setup: actions used to reach the value needed before final instructions. Their order does not matter.
+- Setup: actions used to reach the value needed before final instructions. Follow the shown order
+  so intermediate positions stay within the anvil's limits.
 - Finally: actions that must be performed in the shown order to complete the item.
+
+The calculator chooses the shortest complete plan satisfying the rules and bounds.
+Normal mode starts at 0 and keeps every position within 0–150. Invalid inputs,
+conflicting rules, and unreachable targets produce an error instead of a partial plan.
 
 ## Running locally
 
@@ -58,6 +65,12 @@ npm run dev
 ```
 
 The dev server runs at `http://127.0.0.1:5174/`.
+
+## Verification
+
+Run `npm test` for solver invariants and regression tests, and `npm run build`
+for type checking and the production build. See [the solver contract](docs/solver-contract.md)
+for coverage, bounds, and the solver's correctness argument.
 
 ## License
 
