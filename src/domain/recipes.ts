@@ -18,6 +18,8 @@ export interface AnvilRecipe {
   id: string;
   label: string;
   category: AnvilCategoryId;
+  /** Present when this item has only one material variant. */
+  fixedMaterial?: string;
   instructions: { action: PickableActionId; priority: Exclude<PriorityValue, ''> }[];
 }
 
@@ -198,6 +200,7 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'high_carbon_steel_ingot',
+    fixedMaterial: 'High Carbon Steel',
     label: 'High Carbon Steel Ingot',
     category: 'metalworking',
     instructions: [{ action: 'hit', priority: 'last' }, { action: 'hit', priority: 'second-last' }, { action: 'hit', priority: 'third-last' }],
@@ -216,6 +219,7 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'refined_iron_bloom',
+    fixedMaterial: 'Wrought Iron',
     label: 'Refined Iron Bloom',
     category: 'metalworking',
     instructions: [{ action: 'hit', priority: 'last' }, { action: 'hit', priority: 'second-last' }, { action: 'hit', priority: 'third-last' }],
@@ -270,6 +274,7 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'from_bloom',
+    fixedMaterial: 'Wrought Iron',
     label: 'Wrought Iron Ingot (from Bloom)',
     category: 'metalworking',
     instructions: [{ action: 'hit', priority: 'last' }, { action: 'hit', priority: 'second-last' }, { action: 'hit', priority: 'third-last' }],
@@ -288,12 +293,14 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'blowpipe',
+    fixedMaterial: 'Brass',
     label: 'Blowpipe',
     category: 'blocks',
     instructions: [{ action: 'draw', priority: 'last' }, { action: 'draw', priority: 'second-last' }, { action: 'hit', priority: 'third-last' }],
   },
   {
     id: 'mechanisms',
+    fixedMaterial: 'Brass',
     label: 'Brass Mechanisms',
     category: 'blocks',
     instructions: [{ action: 'punch', priority: 'last' }, { action: 'hit', priority: 'second-last' }, { action: 'punch', priority: 'third-last' }],
@@ -312,18 +319,21 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'grill',
+    fixedMaterial: 'Wrought Iron',
     label: 'Grill',
     category: 'blocks',
     instructions: [{ action: 'draw', priority: 'any' }, { action: 'punch', priority: 'last' }, { action: 'punch', priority: 'not-last' }],
   },
   {
     id: 'door',
+    fixedMaterial: 'Wrought Iron',
     label: 'Iron Door',
     category: 'blocks',
     instructions: [{ action: 'hit', priority: 'last' }, { action: 'draw', priority: 'not-last' }, { action: 'punch', priority: 'not-last' }],
   },
   {
     id: 'jar_lid',
+    fixedMaterial: 'Tin',
     label: 'Jar Lid',
     category: 'blocks',
     instructions: [{ action: 'hit', priority: 'last' }, { action: 'hit', priority: 'second-last' }, { action: 'punch', priority: 'third-last' }],
@@ -336,6 +346,7 @@ export const ANVIL_RECIPES: AnvilRecipe[] = [
   },
   {
     id: 'pump',
+    fixedMaterial: 'Steel',
     label: 'Steel Pipe',
     category: 'blocks',
     instructions: [{ action: 'draw', priority: 'last' }, { action: 'bend', priority: 'not-last' }],

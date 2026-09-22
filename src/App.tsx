@@ -13,6 +13,8 @@ import {
 } from './domain/actions';
 import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
 import type { HistoryItem } from './domain/history';
+import { normalizeMaterial } from './domain/materials';
+import MaterialPicker from './components/MaterialPicker';
 import { findRecipe, type AnvilRecipe } from './domain/recipes';
 import { useHistory } from './hooks/useHistory';
 import { useTheme } from './hooks/useTheme';
@@ -58,6 +60,7 @@ export default function App() {
     emptyInstruction(),
   ]);
   const [recipeId, setRecipeId] = useState('');
+  const [material, setMaterial] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [zeroAlignedMode, setZeroAlignedMode] = useState(false);
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -75,6 +78,7 @@ export default function App() {
   function updateInstruction(index: number, patch: Partial<Instruction>) {
     // Hand-editing a row means the rows no longer describe the picked item.
     setRecipeId('');
+    setMaterial('');
     setInstructions((current) =>
       current.map((instruction, instructionIndex) =>
         instructionIndex === index ? { ...instruction, ...patch } : instruction,
@@ -88,6 +92,7 @@ export default function App() {
     setError('');
 
     const nextRecipe = findRecipe(nextRecipeId);
+    setMaterial(nextRecipe?.fixedMaterial ?? '');
     if (!nextRecipe) {
       setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
       return;
@@ -113,7 +118,9 @@ export default function App() {
     // Calculating is the point you actually forge the item, so that is what the
     // history records; hand-set instructions have no item to record.
     if (recipeId) {
-      remember({ recipeId, target: parsedTarget, zeroAligned: zeroAlignedMode });
+      const selectedMaterial = recipe?.fixedMaterial ?? normalizeMaterial(material);
+      setMaterial(selectedMaterial);
+      remember({ recipeId, material: selectedMaterial, target: parsedTarget, zeroAligned: zeroAlignedMode });
     }
 
     setError('');
@@ -123,6 +130,7 @@ export default function App() {
   function restore(item: HistoryItem) {
     setMode('auto');
     setRecipeId(item.recipeId);
+    setMaterial(item.material);
     setInstructions(instructionRows(item.recipe));
     setTargetValue(item.zeroAligned ? '' : String(item.target));
     setZeroAlignedMode(item.zeroAligned);
@@ -143,6 +151,7 @@ export default function App() {
 
   function reset() {
     setRecipeId('');
+    setMaterial('');
     setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
     setTargetValue('');
     setResult(null);
@@ -189,7 +198,20 @@ export default function App() {
               role="tabpanel"
               aria-labelledby={`${panelIds.auto}-tab`}
             >
-              <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+              <div className="item-material-row">
+                <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+                <MaterialPicker
+                  key={recipeId}
+                  value={recipe?.fixedMaterial ?? material}
+                  disabled={!recipe || Boolean(recipe.fixedMaterial)}
+                  onChange={(nextMaterial) => {
+                    setMaterial(nextMaterial);
+                    setTargetValue('');
+                    setResult(null);
+                    setError('');
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div

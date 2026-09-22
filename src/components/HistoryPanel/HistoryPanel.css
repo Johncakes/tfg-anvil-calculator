@@ -7,8 +7,34 @@
   display: grid;
   gap: 8px;
   margin: 0;
-  padding: 0;
+  padding: 4px;
   list-style: none;
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+.history-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-search input {
+  min-width: 0;
+}
+
+.history-count {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.history-list:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .history-entry {
@@ -48,6 +74,14 @@
   font-size: 0.9rem;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.history-entry-material {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
 }
 
 /* The target is the half of an entry that is easy to lose, so it stays legible. */
