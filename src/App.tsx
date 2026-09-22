@@ -8,9 +8,10 @@ import ThemeToggle from './components/ThemeToggle';
 import {
   emptyInstruction,
   type Instruction,
+  type ResolvedActionId,
   type SelectedInstruction,
 } from './domain/actions';
-import { solve, ZERO_ALIGNED_BOUNDS, type CalculationResult } from './domain/calculator';
+import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
 import type { HistoryItem } from './domain/history';
 import { normalizeMaterial } from './domain/materials';
 import MaterialPicker from './components/MaterialPicker';
@@ -18,6 +19,11 @@ import { findRecipe, type AnvilRecipe } from './domain/recipes';
 import { useHistory } from './hooks/useHistory';
 import { useTheme } from './hooks/useTheme';
 import './App.css';
+
+interface CalculationResult {
+  setupActions: ResolvedActionId[];
+  finalActions: ResolvedActionId[];
+}
 
 function isSelectedInstruction(instruction: Instruction): instruction is SelectedInstruction {
   return instruction.action !== '' && instruction.priority !== '';
@@ -29,6 +35,19 @@ function instructionRows(recipe: AnvilRecipe): Instruction[] {
     ...recipe.instructions,
     ...Array.from({ length: 3 - recipe.instructions.length }, emptyInstruction),
   ];
+}
+
+function runCalculation(
+  selected: SelectedInstruction[],
+  target: number,
+  allowBelowZeroSetup: boolean,
+): CalculationResult {
+  const finalInstructions = normalizeInstructions(selected, target);
+
+  return {
+    setupActions: calculateSetupActions(target, finalInstructions, { allowBelowZeroSetup }),
+    finalActions: sortInstructions(finalInstructions).map((instruction) => instruction.action),
+  };
 }
 
 export default function App() {
@@ -105,10 +124,8 @@ export default function App() {
       setError('Choose at least one smithing instruction.');
       return;
     }
-    const outcome = solve({ target: parsedTarget, rules: validInstructions,
-      bounds: zeroAlignedMode ? ZERO_ALIGNED_BOUNDS : undefined });
-    if (!outcome.ok) {
-      setError(outcome.error);
+    if (!Number.isInteger(parsedTarget) || parsedTarget < 0 || parsedTarget > 150) {
+      setError('Enter a whole-number target between 0 and 150.');
       return;
     }
 
@@ -121,7 +138,7 @@ export default function App() {
     }
 
     setError('');
-    setResult(outcome.plan);
+    setResult(runCalculation(validInstructions, parsedTarget, zeroAlignedMode));
   }
 
   function restore(item: HistoryItem) {
@@ -133,10 +150,7 @@ export default function App() {
     setZeroAlignedMode(item.zeroAligned);
     // Results are derived, so old entries are recalculated rather than stored and
     // replayed; an entry can never show a result the calculator would not give now.
-    const outcome = solve({ target: item.target, rules: item.recipe.instructions,
-      bounds: item.zeroAligned ? ZERO_ALIGNED_BOUNDS : undefined });
-    setResult(outcome.ok ? outcome.plan : null);
-    setError(outcome.ok ? '' : outcome.error);
+    setResult(runCalculation(item.recipe.instructions, item.target, item.zeroAligned));
   }
 
   function changeMode(nextMode: SmithingMode) {

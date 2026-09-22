@@ -47,13 +47,8 @@ Custom modpacks with targets outside that range should use the numeric target mo
 
 The result is split into two parts:
 
-- Setup: actions used to reach the value needed before final instructions. Follow the shown order
-  so intermediate positions stay within the anvil's limits.
+- Setup: actions used to reach the value needed before final instructions. Their order does not matter.
 - Finally: actions that must be performed in the shown order to complete the item.
-
-The calculator chooses the shortest complete plan satisfying the rules and bounds.
-Normal mode starts at 0 and keeps every position within 0–150. Invalid inputs,
-conflicting rules, and unreachable targets produce an error instead of a partial plan.
 
 ## Running locally
 
@@ -68,9 +63,8 @@ The dev server runs at `http://127.0.0.1:5174/`.
 
 ## Verification
 
-Run `npm test` for solver invariants and regression tests, and `npm run build`
-for type checking and the production build. See [the solver contract](docs/solver-contract.md)
-for coverage, bounds, and the solver's correctness argument.
+Run `npm test` for calculation regression tests and `npm run build` for type checking
+and the production build.
 
 ## License
 
