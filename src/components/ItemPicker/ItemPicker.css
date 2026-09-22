@@ -33,6 +33,11 @@
   image-rendering: pixelated;
 }
 
+.item-preview-icon:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-icon-border);
+}
+
 /* Placeholder so an empty square still reads as something you can open. */
 .item-preview-empty {
   width: 22px;

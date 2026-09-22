@@ -24,12 +24,16 @@ a few changes to make it a faster and more simple process.
    - **Manual** — choose up to three instructions to match the ones shown in the in-game anvil
      GUI, and give each one its priority: Last, Second Last, Third Last, Not Last, or Any.
      **Use this for anything the item list does not cover.**
-2. Enter the target value shown in the anvil GUI.
-3. Click Calculate. The result appears in the same box, below the instructions.
+2. Optionally choose or type the material beside the item search. Items with one material
+   have it filled in automatically and the field is disabled. Changing material clears the
+   target, since each material can have a different target value.
+3. Enter the target value shown in the anvil GUI.
+4. Click Calculate. The result appears in the same box, below the instructions.
 
 Every calculation you run on a picked item is kept in your browser and listed in the **History**
-panel below the result, newest first, up to eight entries. Each entry records the item *and* the
-target it was calculated with, so clicking one brings back the instructions, the target and the
+panel below the result, newest first, up to 100 entries. Scroll the list or use its search bar
+to filter by item, material, target, or zero-aligned mode. Each entry records the item *and* the
+material and target it was calculated with, so clicking one brings back the instructions, material, target and the
 result together. Forging the same item in a second metal is a separate entry, because the target
 is different. **Clear all** in that panel empties it.
 
@@ -38,6 +42,8 @@ the same item has a different target in every metal.
 
 If the target value is hard to read, enable Zero-aligned mode in Settings. Align the red and green
 pointers in the anvil UI, then calculate with the app's assumed target value of `0`.
+Zero-aligned mode uses relative offsets safe for standard TFC targets (40–113).
+Custom modpacks with targets outside that range should use the numeric target mode.
 
 The result is split into two parts:
 
@@ -54,6 +60,11 @@ npm run dev
 ```
 
 The dev server runs at `http://127.0.0.1:5174/`.
+
+## Verification
+
+Run `npm test` for calculation regression tests and `npm run build` for type checking
+and the production build.
 
 ## License
 
@@ -76,5 +87,9 @@ Item textures in `public/textures/items` come from three places:
   texture cannot be redistributed and the steel pipe has no item texture.
 
 The Scraping Knife Blade icon is a stand-in, as the TFC Scraping mod publishes no texture source.
+
+Material ingot textures in `public/textures/materials` come from
+[TerraFirmaCraft 1.20.x](https://github.com/TerraFirmaCraft/TerraFirmaCraft/tree/1.20.x/src/main/resources/assets/tfc/textures/item/metal/ingot),
+licensed under EUPL 1.2. Iron uses the wrought iron texture; custom materials use the generic ingot icon.
 
 Action textures in `public/textures` are derived from PerfectAnvilTFG by Vizzy, licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). PerfectAnvilTFG is itself a derivative of [Anvil GUI](https://www.curseforge.com/minecraft/texture-packs/tfc-anvil-helper) by Simon, used under CC BY 4.0. The textures were extracted, edited and exported as separate PNG files for use in this app.

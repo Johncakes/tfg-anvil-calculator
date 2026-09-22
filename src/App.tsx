@@ -13,6 +13,8 @@ import {
 } from './domain/actions';
 import { calculateSetupActions, normalizeInstructions, sortInstructions } from './domain/calculator';
 import type { HistoryItem } from './domain/history';
+import { normalizeMaterial } from './domain/materials';
+import MaterialPicker from './components/MaterialPicker';
 import { findRecipe, type AnvilRecipe } from './domain/recipes';
 import { useHistory } from './hooks/useHistory';
 import { useTheme } from './hooks/useTheme';
@@ -58,6 +60,7 @@ export default function App() {
     emptyInstruction(),
   ]);
   const [recipeId, setRecipeId] = useState('');
+  const [material, setMaterial] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [zeroAlignedMode, setZeroAlignedMode] = useState(false);
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -73,8 +76,11 @@ export default function App() {
   const recipe = useMemo(() => findRecipe(recipeId), [recipeId]);
 
   function updateInstruction(index: number, patch: Partial<Instruction>) {
+    setResult(null);
+    setError('');
     // Hand-editing a row means the rows no longer describe the picked item.
     setRecipeId('');
+    setMaterial('');
     setInstructions((current) =>
       current.map((instruction, instructionIndex) =>
         instructionIndex === index ? { ...instruction, ...patch } : instruction,
@@ -88,6 +94,7 @@ export default function App() {
     setError('');
 
     const nextRecipe = findRecipe(nextRecipeId);
+    setMaterial(nextRecipe?.fixedMaterial ?? '');
     if (!nextRecipe) {
       setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
       return;
@@ -102,18 +109,32 @@ export default function App() {
   }
 
   function calculate() {
-    const parsedTarget = zeroAlignedMode ? 0 : Number.parseInt(targetValue, 10);
+    const parsedTarget = zeroAlignedMode ? 0 : targetValue.trim() === '' ? NaN : Number(targetValue);
+    setResult(null);
 
-    if (!Number.isInteger(parsedTarget) || parsedTarget < 0) {
-      setError('Enter a target value of 0 or higher.');
-      setResult(null);
+    if (mode === 'auto' && !recipe) {
+      setError('Pick an item to forge.');
+      return;
+    }
+    if (instructions.some(({ action, priority }) => Boolean(action) !== Boolean(priority))) {
+      setError('Choose both an action and a priority for each instruction, or clear the row.');
+      return;
+    }
+    if (validInstructions.length === 0) {
+      setError('Choose at least one smithing instruction.');
+      return;
+    }
+    if (!Number.isInteger(parsedTarget) || parsedTarget < 0 || parsedTarget > 150) {
+      setError('Enter a whole-number target between 0 and 150.');
       return;
     }
 
     // Calculating is the point you actually forge the item, so that is what the
     // history records; hand-set instructions have no item to record.
     if (recipeId) {
-      remember({ recipeId, target: parsedTarget, zeroAligned: zeroAlignedMode });
+      const selectedMaterial = recipe?.fixedMaterial ?? normalizeMaterial(material);
+      setMaterial(selectedMaterial);
+      remember({ recipeId, material: selectedMaterial, target: parsedTarget, zeroAligned: zeroAlignedMode });
     }
 
     setError('');
@@ -123,10 +144,10 @@ export default function App() {
   function restore(item: HistoryItem) {
     setMode('auto');
     setRecipeId(item.recipeId);
+    setMaterial(item.material);
     setInstructions(instructionRows(item.recipe));
     setTargetValue(item.zeroAligned ? '' : String(item.target));
     setZeroAlignedMode(item.zeroAligned);
-    setError('');
     // Results are derived, so old entries are recalculated rather than stored and
     // replayed; an entry can never show a result the calculator would not give now.
     setResult(runCalculation(item.recipe.instructions, item.target, item.zeroAligned));
@@ -143,6 +164,7 @@ export default function App() {
 
   function reset() {
     setRecipeId('');
+    setMaterial('');
     setInstructions([emptyInstruction(), emptyInstruction(), emptyInstruction()]);
     setTargetValue('');
     setResult(null);
@@ -189,7 +211,20 @@ export default function App() {
               role="tabpanel"
               aria-labelledby={`${panelIds.auto}-tab`}
             >
-              <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+              <div className="item-material-row">
+                <ItemPicker value={recipeId} recipe={recipe} onChange={selectRecipe} />
+                <MaterialPicker
+                  key={recipeId}
+                  value={recipe?.fixedMaterial ?? material}
+                  disabled={!recipe || Boolean(recipe.fixedMaterial)}
+                  onChange={(nextMaterial) => {
+                    setMaterial(nextMaterial);
+                    setTargetValue('');
+                    setResult(null);
+                    setError('');
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div
@@ -265,14 +300,21 @@ export default function App() {
             <label className="target-field">
               <input
                 type="number"
+                aria-label="Target value"
                 min="0"
+                max="150"
+                step="1"
                 value={zeroAlignedMode ? '0' : targetValue}
                 disabled={zeroAlignedMode}
-                onChange={(event) => setTargetValue(event.target.value)}
+                onChange={(event) => {
+                  setTargetValue(event.target.value);
+                  setResult(null);
+                  setError('');
+                }}
                 placeholder="Example: 72"
               />
             </label>
-            {error ? <p className="error-message">{error}</p> : null}
+            {error ? <p className="error-message" role="alert">{error}</p> : null}
             <button type="button" className="primary-button" onClick={calculate}>
               Calculate
             </button>
